@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {MutableRefObject, useEffect, useRef, useState} from 'react';
 import {Text, View} from 'react-native';
 
 type PrmsType = {prmsRealmName: string; prmsTitle: string; prmmCont: string};
@@ -9,9 +9,20 @@ type ResponseType = {
         body: {items: {item: Array<any>}};
     };
 };
+type keywordGroupsType = {
+    groupName: string;
+    keywords: Array<string>;
+};
 
 const Test = () => {
     const [result, setResult] = useState<Array<PartyType>>();
+    const keyword = useRef<Array<string>>([]);
+    const keywordObject = useRef<
+        Array<Array<{keyword: string; ratio: number}>>
+    >([]);
+    const sliceKeyword = useRef<Array<Array<string>>>([]);
+    const [isfetchFinish, setIsFetchFinish] = useState<boolean>(false);
+
     const str = {
         response: {
             header: {
@@ -234,11 +245,114 @@ const Test = () => {
                 : [
                       {
                           partyName: str.response.body.items.item[0].partyName,
-                          prmsArray: pushPrmsTypeArray(str),
+                          prmsArray: pushPrmsTypeArray(str2),
                       },
                   ],
         );
     }, []);
+
+    useEffect(() => {
+        const multipleArray: any[] = [];
+        result &&
+            result.map(party =>
+                multipleArray.push(
+                    party.prmsArray.map(item => item.prmsRealmName),
+                ),
+            );
+        const uniqueArray = [
+            ...new Set(
+                multipleArray
+                    .flat()
+                    .flatMap((item: string) =>
+                        item.split(',').map(item => item.replaceAll(' ', '')),
+                    ),
+            ),
+        ];
+        keyword.current = uniqueArray;
+
+        if (keyword.current && keyword.current.length > 0) {
+            for (let i = 0; i < keyword.current.length; i += 4) {
+                sliceKeyword.current &&
+                    sliceKeyword.current.push(keyword.current.slice(i, i + 4));
+            }
+            sliceKeyword.current = [
+                ...sliceKeyword.current.map(item => [
+                    keyword.current[0],
+                    ...item,
+                ]),
+            ];
+        }
+
+        const callNaverTrend = async (keyword: string[]) => {
+            const requestHeader = {
+                'X-Naver-Client-Id': '9qEDbkByp1vTs0uBqi4H',
+                'X-Naver-Client-Secret': 'yjFk7nOvVn',
+                'Content-Type': 'application/json',
+            };
+            const requestURL = 'https://openapi.naver.com/v1/datalab/search';
+
+            const requestBody = {
+                startDate: '2023-03-01',
+                endDate: '2024-03-01',
+                timeUnit: 'month',
+                keywordGroups: keyword.map(item => ({
+                    groupName: item,
+                    keywords: [item],
+                })),
+            };
+
+            const response = await fetch(requestURL, {
+                method: 'POST',
+                headers: requestHeader,
+                body: JSON.stringify(requestBody),
+            });
+            const result = await response.json();
+            if (response.ok) {
+                return result;
+            } else {
+                console.log(result);
+            }
+        };
+
+        Promise.all(
+            sliceKeyword.current.map(item =>
+                callNaverTrend(item).then((data: any) => {
+                    const object = data.results.map((item: any) => {
+                        return {
+                            ratio:
+                                item.data
+                                    .map((item: any) => item.ratio)
+                                    .reduce(
+                                        (accumulator: any, currentValue: any) =>
+                                            accumulator + currentValue,
+                                        0,
+                                    ) / 12,
+                            keyword: String(item.keywords),
+                        };
+                    });
+                    keywordObject.current.push(object);
+                }),
+            ),
+        )
+            .then(() => {
+                const standardObject = keywordObject.current[0];
+                const standardRatio = standardObject[0].ratio;
+                console.log('뭐임 왜안됨', standardRatio);
+                keywordObject.current.forEach((array, arrayIndex) =>
+                    array.forEach((item, index) =>
+                        console.log(
+                            item.ratio,
+                            item.keyword,
+                            arrayIndex,
+                            index,
+                        ),
+                    ),
+                );
+            })
+            .catch(error => {
+                console.log(error);
+            });
+    }, [result]);
 
     return (
         <View>
@@ -273,3 +387,96 @@ export default Test;
 //         console.error('Error:', error);
 //     }
 // };
+
+/*
+
+    const [resultNaverTrend, setResultNaverTrend] = useState<string>();
+
+    useEffect(() => {
+        const callNaverTrend = async (keyword: string[]) => {
+            const requestHeader = {
+                'X-Naver-Client-Id': '9qEDbkByp1vTs0uBqi4H',
+                'X-Naver-Client-Secret': 'yjFk7nOvVn',
+                'Content-Type': 'application/json',
+            };
+            const requestURL = 'https://openapi.naver.com/v1/datalab/search';
+
+            const requestBody = {
+                startDate: '2024-03-26',
+                endDate: '2024-03-27',
+                timeUnit: 'date',
+                keywordGroups: [
+                    {
+                        groupName: '정치',
+                        keywords: ['주거복지'],
+                    },
+                ],
+            };
+
+            try {
+                const response = await fetch(requestURL, {
+                    method: 'POST',
+                    headers: requestHeader,
+                    body: JSON.stringify(requestBody),
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    return result;
+                } else {
+                    throw new Error(result);
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        };
+
+        if (keyword.length > 0) {
+            callNaverTrend(keyword.splice(19, keyword.length - 1)).then(
+                data => {
+                    console.log(data);
+                    console.log(data.results[0]);
+                    data.results.forEach((results: any) => {
+                        results.data.forEach((item: any, index: number) =>
+                            console.log(results.keywords[index], item),
+                        );
+                    });
+                },
+            );
+        }
+    }, [keyword]);
+
+*/
+
+/*
+    useEffect(() => {
+        const callNaverBlogSearch = async (keyword: string) => {
+            const requestHeader = {
+                'X-Naver-Client-Id': '9qEDbkByp1vTs0uBqi4H',
+                'X-Naver-Client-Secret': 'yjFk7nOvVn',
+            };
+            const requestURL = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(
+                keyword,
+            )}`;
+
+            try {
+                const response = await fetch(requestURL, {
+                    method: 'GET',
+                    headers: requestHeader,
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    return result;
+                } else {
+                    console.log(result);
+                    throw new Error(result);
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        };
+
+        callNaverBlogSearch('주거복지').then(result =>
+            console.log(result.total),
+        );
+    }, [keyword]);
+*/
