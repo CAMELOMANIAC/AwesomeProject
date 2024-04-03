@@ -1,6 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Text, View} from 'react-native';
+import {Button, Text, TouchableWithoutFeedback, View} from 'react-native';
 import {str, str2} from '../../utils/publicData/partyData';
+import CheckBox from '@react-native-community/checkbox';
+import {styles} from '../../utils/styleSheets';
+import {NavigationProp} from '@react-navigation/native';
 
 type PrmsType = {prmsRealmName: string; prmsTitle: string; prmmCont: string};
 type PartyType = {partyName: string; prmsArray: Array<PrmsType>};
@@ -15,16 +18,27 @@ type keywordGroupsType = {
     groupName: string;
     keywords: Array<string>;
 };
+type props = {
+    route?: {
+        params: {
+            age?: string;
+            gender?: string;
+        };
+    };
+    navigation?: NavigationProp<any>;
+};
 
-const Test = () => {
+const Test = ({route, navigation}: props) => {
     const [party, setParty] = useState<Array<PartyType>>();
     const keyword = useRef<Array<string>>([]);
     const [keywordObject, setKeywordObject] = useState<
         Array<keywordObjectType>
     >([]);
     const sliceKeyword = useRef<Array<Array<string>>>([]);
+    const [checkedPrms, setCheckedPrms] = useState<Array<string>>();
 
     useEffect(() => {
+        console.log(route?.params);
         function pushPrmsTypeArray(
             responseObject: ResponseType,
         ): Array<PrmsType> {
@@ -149,6 +163,8 @@ const Test = () => {
                 startDate: '2023-03-01',
                 endDate: '2024-03-01',
                 timeUnit: 'month',
+                gender: route?.params.gender || '',
+                ...(route?.params.age ? {ages: [route.params.age]} : {}),
                 keywordGroups: keyword.map(item => ({
                     groupName: item,
                     keywords: [item],
@@ -187,10 +203,13 @@ const Test = () => {
                     const standardRatio = results[index].find(
                         item => item.keyword === standardObject.keyword,
                     )!.ratio;
-                    array.forEach(item => {
-                        item.ratio =
-                            item.ratio * (standardObject.ratio / standardRatio);
-                    });
+                    //만약 기준이 될 키워드의 ratio가 0이 아니라면 비율을 조정
+                    standardRatio !== 0 &&
+                        array.forEach(item => {
+                            item.ratio =
+                                item.ratio *
+                                (standardObject.ratio / standardRatio);
+                        });
                     const filterArray = array.filter(
                         item => item.keyword !== standardObject.keyword,
                     );
@@ -208,20 +227,44 @@ const Test = () => {
         setKeywordObject(prev => prev.sort((a, b) => b.ratio - a.ratio));
     }, [keywordObject]);
 
+    const pressHandler = (item: keywordObjectType) => {
+        setCheckedPrms(prev =>
+            prev?.includes(item.keyword)
+                ? prev.filter(prms => prms !== item.keyword)
+                : [...(prev || []), item.keyword],
+        );
+    };
+
     return (
         <View>
+            <Text>비교하고 싶은 정책을 선택해주세요</Text>
             {keywordObject ? (
-                <>
-                    {keywordObject.map(item => (
-                        <Text key={item.keyword}>
-                            {item.keyword}
-                            {item.ratio}
-                        </Text>
-                    ))}
-                </>
+                keywordObject.map(item => (
+                    <TouchableWithoutFeedback
+                        key={item.keyword}
+                        onPress={() => pressHandler(item)}>
+                        <View style={styles.checkBox}>
+                            <CheckBox
+                                value={checkedPrms?.includes(item.keyword)}
+                                onValueChange={() => pressHandler(item)}
+                            />
+                            <Text>
+                                {item.keyword}
+                                {item.ratio}
+                            </Text>
+                        </View>
+                    </TouchableWithoutFeedback>
+                ))
             ) : (
                 <Text>abs</Text>
             )}
+
+            <Button
+                onPress={() =>
+                    navigation?.navigate('Politic', {checkedPrms: checkedPrms})
+                }
+                title="다음으로"
+            />
         </View>
     );
 };

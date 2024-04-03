@@ -47,7 +47,6 @@ const Notice = ({
             }
         };
         callClovaSummary().then(data => {
-            console.log(data);
             setResult(data.summary);
         });
     }, [prompt]);

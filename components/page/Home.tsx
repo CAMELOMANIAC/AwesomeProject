@@ -26,6 +26,10 @@ const Home = ({
                 title="Go to Test 크롤링"
                 onPress={() => navigation.navigate('Crawling')}
             />
+            <Button
+                title="Go to Test Survey"
+                onPress={() => navigation.navigate('Survey')}
+            />
         </View>
     );
 };

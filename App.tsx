@@ -13,6 +13,8 @@ import Home from './components/page/Home';
 import Test from './components/page/Test';
 import Crawling from './components/page/Crawling';
 import {RecoilRoot} from 'recoil';
+import Survey from './components/page/Survey';
+import Politic from './components/page/Politic';
 
 function App(): React.JSX.Element {
     const Stack = createNativeStackNavigator();
@@ -31,6 +33,8 @@ function App(): React.JSX.Element {
                     />
                     <Stack.Screen name="Test" component={Test} />
                     <Stack.Screen name="Crawling" component={Crawling} />
+                    <Stack.Screen name="Survey" component={Survey} />
+                    <Stack.Screen name="Politic" component={Politic} />
                 </Stack.Navigator>
             </NavigationContainer>
         </RecoilRoot>
