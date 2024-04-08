@@ -1,24 +1,32 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Button, Text, TouchableWithoutFeedback, View} from 'react-native';
+import {
+    Alert,
+    Button,
+    FlatList,
+    Text,
+    TouchableWithoutFeedback,
+    View,
+} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import {styles} from '../../utils/styleSheets';
 import {NavigationProp} from '@react-navigation/native';
 import {
+    KeywordObjectType,
     ResponsePartyPolicyAPI,
+    callNaverTrend,
     callPartyPolicyAPI,
 } from '../../utils/publicFunction/callAPI';
 import {useRecoilState} from 'recoil';
 import {partyNameState} from '../../utils/recoil/globalState';
 
 type PrmsType = {prmsRealmName: string; prmsTitle: string; prmmCont: string};
-type PartyType = {partyName: string; prmsArray: Array<PrmsType>};
+export type PartyType = {partyName: string; prmsArray: Array<PrmsType>};
 type ResponseType = {
     response: {
         header: {resultCode: string; resultMsg: string};
         body: {items: {item: Array<any>}};
     };
 };
-type KeywordObjectType = {keyword: string; ratio: number};
 type Props = {
     route?: {
         params: {
@@ -81,6 +89,7 @@ const Test = ({route, navigation}: Props) => {
         const partyPolicyPromise = partyName.map(item =>
             callPartyPolicyAPI(item),
         );
+
         Promise.all(partyPolicyPromise).then(results => {
             const multipleArray: any[] = []; // 공공데이터포탈api로 받은 결과를 담을 배열
             results.forEach(item => {
@@ -99,18 +108,17 @@ const Test = ({route, navigation}: Props) => {
             const uniqueArray = [
                 // 중복제거 및 필요없는 문자열 제거한 정보를 담을 배열
                 ...new Set(
-                    multipleArray
-                        .flat()
-                        .flatMap((item: string) =>
-                            item
-                                .split(',')
-                                .map(item =>
-                                    item
-                                        .replaceAll(' ', '')
-                                        .replaceAll('기타(', '')
-                                        .replaceAll(')', ''),
-                                ),
-                        ),
+                    multipleArray.flat().flatMap((item: string) =>
+                        item
+                            .split(/[.,/,·]/)
+                            .map(item =>
+                                item
+                                    .replaceAll('기타(', '')
+                                    .replaceAll(' ', '')
+                                    .replaceAll(')', ''),
+                            )
+                            .filter(item => item.length > 0),
+                    ),
                 ),
             ];
             keyword.current = uniqueArray;
@@ -132,81 +140,56 @@ const Test = ({route, navigation}: Props) => {
                 ];
             }
 
-            const callNaverTrend = async (
-                keyword: string[],
-            ): Promise<Array<KeywordObjectType>> => {
-                //네이버 트렌드 api 호출 함수
-                const requestHeader = {
-                    'X-Naver-Client-Id': '9qEDbkByp1vTs0uBqi4H',
-                    'X-Naver-Client-Secret': 'yjFk7nOvVn',
-                    'Content-Type': 'application/json',
-                };
-                const requestURL =
-                    'https://openapi.naver.com/v1/datalab/search';
-                const requestBody = {
-                    startDate: '2023-03-01',
-                    endDate: '2024-03-01',
-                    timeUnit: 'month',
-                    gender: route?.params.gender || '',
-                    ...(route?.params.age ? {ages: [route.params.age]} : {}),
-                    keywordGroups: keyword.map(item => ({
-                        groupName: item,
-                        keywords: [item],
-                    })),
-                };
-                const response = await fetch(requestURL, {
-                    method: 'POST',
-                    headers: requestHeader,
-                    body: JSON.stringify(requestBody),
-                });
-                const result = await response.json();
-                if (response.ok) {
-                    return result.results.map((item: any) => ({
-                        //12개월치 데이터를 평균내어 ratio로 반환
-                        ratio:
-                            item.data
-                                .map((item: any) => item.ratio)
-                                .reduce(
-                                    (accumulator: any, currentValue: any) =>
-                                        accumulator + currentValue,
-                                    0,
-                                ) / 12,
-                        keyword: String(item.keywords),
-                    }));
-                } else {
-                    throw new Error(JSON.stringify(result));
-                }
-            };
-            Promise.all(sliceKeyword.current.map(item => callNaverTrend(item))) //네이버 트렌드 api를 반복해서 호출 후 결과를 keywordObject에 저장
-                .then(results => {
-                    setIsLoading(false);
-                    results.forEach((array, index) => {
-                        //기준이 될 키워드와 비교할 키워드의 ratio를 비교하여 비율을 조정
-                        const standardObject = results[0][0];
-                        const standardRatio = results[index].find(
-                            item => item.keyword === standardObject.keyword,
-                        )!.ratio;
-                        //만약 기준이 될 키워드의 ratio가 0이 아니라면 비율을 조정
-                        standardRatio !== 0 &&
-                            array.forEach(item => {
-                                item.ratio =
-                                    item.ratio *
-                                    (standardObject.ratio / standardRatio);
-                            });
-                        const filterArray = array.filter(
-                            item => item.keyword !== standardObject.keyword,
+            route &&
+                Promise.all(
+                    sliceKeyword.current.map(item =>
+                        callNaverTrend(item, route),
+                    ),
+                ) //네이버 트렌드 api를 반복해서 호출 후 결과를 keywordObject에 저장
+                    .then(results => {
+                        setIsLoading(false);
+                        results.forEach((array, index) => {
+                            //기준이 될 키워드와 비교할 키워드의 ratio를 비교하여 비율을 조정
+                            const standardObject = results[0][0];
+                            const standardRatio = results[index].find(
+                                (item: any) =>
+                                    item.keyword === standardObject.keyword,
+                            )!.ratio;
+                            //만약 기준이 될 키워드의 ratio가 0이 아니라면 비율을 조정
+                            standardRatio !== 0 &&
+                                array.forEach((item: any) => {
+                                    item.ratio =
+                                        item.ratio *
+                                        (standardObject.ratio / standardRatio);
+                                });
+                            const filterArray = array.filter(
+                                (item: any) =>
+                                    item.keyword !== standardObject.keyword,
+                            );
+                            index === 0
+                                ? setKeywordObject([
+                                      standardObject,
+                                      ...filterArray,
+                                  ])
+                                : setKeywordObject(prev => [
+                                      ...prev,
+                                      ...filterArray,
+                                  ]);
+                        });
+                    })
+                    .catch(error => {
+                        setIsLoading(false);
+                        console.error(error);
+                        Alert.alert(
+                            '죄송합니다',
+                            '일일 api 최대한도에 도달했습니다\n직접 정책 키워드를 선택하거나\n내일 다시 시도하십시오',
                         );
-                        index === 0
-                            ? setKeywordObject([standardObject, ...filterArray])
-                            : setKeywordObject(prev => [
-                                  ...prev,
-                                  ...filterArray,
-                              ]);
+                        setKeywordObject(
+                            keyword.current.map(item => {
+                                return {keyword: item, ratio: 0};
+                            }),
+                        );
                     });
-                })
-                .catch(error => {
-                    console.error(error);
-                });
         });
     }, []);
 
@@ -223,35 +206,42 @@ const Test = ({route, navigation}: Props) => {
     };
 
     return (
-        <View>
+        <View style={styles.screen}>
             <Text>비교하고 싶은 정책을 선택해주세요</Text>
             {isLoading ? (
                 <Text>로딩중</Text>
             ) : (
-                keywordObject &&
-                keywordObject.map(item => (
-                    <TouchableWithoutFeedback
-                        key={item.keyword}
-                        onPress={() => pressHandler(item)}>
-                        <View style={styles.checkBox}>
-                            <CheckBox
-                                value={checkedPrms?.includes(item.keyword)}
-                                onValueChange={() => pressHandler(item)}
-                            />
-                            <Text>
-                                {item.keyword}
-                                {item.ratio}
-                            </Text>
-                        </View>
-                    </TouchableWithoutFeedback>
-                ))
+                <FlatList
+                    data={keywordObject}
+                    keyExtractor={item => item.keyword}
+                    renderItem={({item}) => (
+                        <TouchableWithoutFeedback
+                            onPress={() => pressHandler(item)}>
+                            <View style={styles.checkBox}>
+                                <CheckBox
+                                    value={checkedPrms?.includes(item.keyword)}
+                                    onValueChange={() => pressHandler(item)}
+                                />
+                                <Text>
+                                    {item.keyword}
+                                    {item.ratio}
+                                </Text>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    )}
+                />
             )}
-            <Button
-                onPress={() =>
-                    navigation?.navigate('Politic', {checkedPrms: checkedPrms})
-                }
-                title="다음으로"
-            />
+            {isLoading === false && (
+                <Button
+                    onPress={() =>
+                        navigation?.navigate('Politic', {
+                            checkedPrms: checkedPrms,
+                            partyArray: partyArray.current,
+                        })
+                    }
+                    title="다음으로"
+                />
+            )}
         </View>
     );
 };
