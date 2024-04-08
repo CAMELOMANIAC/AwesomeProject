@@ -15,28 +15,35 @@ import Crawling from './components/page/Crawling';
 import {RecoilRoot} from 'recoil';
 import Survey from './components/page/Survey';
 import Politic from './components/page/Politic';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 
 function App(): React.JSX.Element {
     const Stack = createNativeStackNavigator();
 
     return (
         <RecoilRoot>
-            <NavigationContainer>
-                <Stack.Navigator>
-                    <Stack.Screen name="Home">
-                        {props => <Home {...props} extraData={123} />}
-                    </Stack.Screen>
-                    <Stack.Screen
-                        name="Notice"
-                        component={Notice}
-                        initialParams={{itemId: '처음에만되나?'}}
-                    />
-                    <Stack.Screen name="Test" component={Test} />
-                    <Stack.Screen name="Crawling" component={Crawling} />
-                    <Stack.Screen name="Survey" component={Survey} />
-                    <Stack.Screen name="Politic" component={Politic} />
-                </Stack.Navigator>
-            </NavigationContainer>
+            <GestureHandlerRootView>
+                <NavigationContainer>
+                    <Stack.Navigator>
+                        <Stack.Screen name="Home">
+                            {props => <Home {...props} extraData={123} />}
+                        </Stack.Screen>
+                        <Stack.Screen
+                            name="Notice"
+                            component={Notice}
+                            initialParams={{itemId: '처음에만되나?'}}
+                        />
+                        <Stack.Screen name="Test" component={Test} />
+                        <Stack.Screen name="Crawling" component={Crawling} />
+                        <Stack.Screen name="Survey" component={Survey} />
+                        <Stack.Screen
+                            name="Politic"
+                            component={Politic}
+                            options={{headerShown: false}}
+                        />
+                    </Stack.Navigator>
+                </NavigationContainer>
+            </GestureHandlerRootView>
         </RecoilRoot>
     );
 }
