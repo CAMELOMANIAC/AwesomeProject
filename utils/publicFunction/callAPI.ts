@@ -116,3 +116,56 @@ export const callPartyPolicyAPI = async (
         return new Error(String(error));
     }
 };
+
+export type KeywordObjectType = {keyword: string; ratio: number};
+
+export const callNaverTrend = async (
+    keyword: string[],
+    route: {
+        params: {
+            age?: string;
+            gender?: string;
+        };
+    },
+): Promise<Array<KeywordObjectType>> => {
+    //네이버 트렌드 api 호출 함수
+    const requestHeader = {
+        'X-Naver-Client-Id': '9qEDbkByp1vTs0uBqi4H',
+        'X-Naver-Client-Secret': 'yjFk7nOvVn',
+        'Content-Type': 'application/json',
+    };
+    const requestURL = 'https://olab/search'; //https://openapi.naver.com/v1/datalab/search
+    const requestBody = {
+        startDate: '2023-03-01',
+        endDate: '2024-03-01',
+        timeUnit: 'month',
+        gender: route?.params.gender || '',
+        ...(route?.params.age ? {ages: [route.params.age]} : {}),
+        keywordGroups: keyword.map(item => ({
+            groupName: item,
+            keywords: [item],
+        })),
+    };
+    const response = await fetch(requestURL, {
+        method: 'POST',
+        headers: requestHeader,
+        body: JSON.stringify(requestBody),
+    });
+    const result = await response.json();
+    if (response.ok) {
+        return result.results.map((item: any) => ({
+            //12개월치 데이터를 평균내어 ratio로 반환
+            ratio:
+                item.data
+                    .map((item: any) => item.ratio)
+                    .reduce(
+                        (accumulator: any, currentValue: any) =>
+                            accumulator + currentValue,
+                        0,
+                    ) / 12,
+            keyword: String(item.keywords),
+        }));
+    } else {
+        throw new Error(JSON.stringify(result));
+    }
+};
