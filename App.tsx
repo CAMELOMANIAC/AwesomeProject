@@ -16,6 +16,17 @@ import {RecoilRoot} from 'recoil';
 import Survey from './components/page/Survey';
 import Politic from './components/page/Politic';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import Info from './components/page/Info';
+
+export type RootStackParamList = {
+    Home: undefined;
+    Notice: {itemId: string};
+    Test: undefined;
+    Crawling: undefined;
+    Survey: undefined;
+    Politic: undefined;
+    Info: undefined;
+};
 
 function App(): React.JSX.Element {
     const Stack = createNativeStackNavigator();
@@ -39,6 +50,11 @@ function App(): React.JSX.Element {
                         <Stack.Screen
                             name="Politic"
                             component={Politic}
+                            options={{headerShown: false}}
+                        />
+                        <Stack.Screen
+                            name="Info"
+                            component={Info}
                             options={{headerShown: false}}
                         />
                     </Stack.Navigator>
