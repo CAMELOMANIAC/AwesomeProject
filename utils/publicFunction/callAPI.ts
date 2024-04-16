@@ -134,10 +134,10 @@ export const callNaverTrend = async (
         'X-Naver-Client-Secret': 'yjFk7nOvVn',
         'Content-Type': 'application/json',
     };
-    const requestURL = 'https://olab/search'; //https://openapi.naver.com/v1/datalab/search
+    const requestURL = 'https://openaparch'; //https://openapi.naver.com/v1/datalab/search
     const requestBody = {
-        startDate: '2023-03-01',
-        endDate: '2024-03-01',
+        startDate: '2023-04-01',
+        endDate: '2024-04-01',
         timeUnit: 'month',
         gender: route?.params.gender || '',
         ...(route?.params.age ? {ages: [route.params.age]} : {}),

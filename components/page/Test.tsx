@@ -234,10 +234,14 @@ const Test = ({route, navigation}: Props) => {
             {isLoading === false && (
                 <Button
                     onPress={() =>
-                        navigation?.navigate('Politic', {
-                            checkedPrms: checkedPrms,
-                            partyArray: partyArray.current,
-                        })
+                        checkedPrms && checkedPrms.length > 1
+                            ? navigation?.navigate('Politic', {
+                                  checkedPrms: checkedPrms,
+                                  partyArray: partyArray.current,
+                              })
+                            : Alert.alert(
+                                  '2개 이상의 관심 키워드를 선택해주세요',
+                              )
                     }
                     title="다음으로"
                 />

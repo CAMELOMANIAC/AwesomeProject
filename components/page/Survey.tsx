@@ -1,17 +1,25 @@
-import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {NavigationProp} from '@react-navigation/native';
 import React, {useState} from 'react';
-import {Button, Text, View} from 'react-native';
+import {Button, Text, TouchableNativeFeedback, View} from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 
 const Survey = ({navigation}: {navigation: NavigationProp<any>}) => {
     const [gender, setGender] = useState<string>();
     const [age, setAge] = useState<string>();
+    const [isNotice, setIsNotice] = useState<boolean>(false);
     return (
         <View>
             <Text>
                 성별, 나이로 추천하는 정보를 제공하기 위해 아래 항목을
-                선택해주세요. 선택하지 않는다면 평균으로 추천합니다.
+                선택해주세요.
             </Text>
+            <TouchableNativeFeedback onPress={() => setIsNotice(prev => !prev)}>
+                <Text>
+                    {isNotice
+                        ? '네이버 트렌드 검색 api가 제공하는 값을 기준으로 함, 성별 나이를 선택하지 않을시 모든 성별, 나이를 기준으로 검색'
+                        : '추천 정보 기준'}
+                </Text>
+            </TouchableNativeFeedback>
             <RNPickerSelect
                 onValueChange={value => setGender(value)}
                 placeholder={{label: '성별', value: null}}

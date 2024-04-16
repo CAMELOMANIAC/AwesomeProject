@@ -3,6 +3,8 @@ import {Text, View} from 'react-native';
 import {PartyType} from './Test';
 import {styles} from '../../utils/styleSheets';
 import PolicyCard from '../PolicyCard';
+import {likeArrayState} from '../../utils/recoil/globalState';
+import {useRecoilState} from 'recoil';
 type props = {
     route?: {
         params: {
@@ -13,6 +15,13 @@ type props = {
 };
 const Politic = ({route}: props) => {
     const [partyArray, setPartyArray] = useState<Array<PartyType>>([]);
+    const [_likeArray, setLikeArray] = useRecoilState(likeArrayState);
+
+    //현재 페이지에 진입하면 초기화
+    useEffect(() => {
+        setLikeArray([]);
+    }, []);
+
     useEffect(() => {
         const filterdparty = route?.params.partyArray.filter(party =>
             route?.params.checkedPrms.some(checkedPrm =>
@@ -35,13 +44,18 @@ const Politic = ({route}: props) => {
             ]);
         });
     }, []);
+
     return (
         <View style={styles.screen}>
             {route?.params.checkedPrms.map(item => (
                 <Text key={item}>{item}</Text>
             ))}
-            {partyArray.map(party => (
-                <PolicyCard key={party.partyName} party={party} />
+            {partyArray.map((party, index) => (
+                <PolicyCard
+                    key={party.partyName}
+                    party={party}
+                    currentPolicy={index}
+                />
             ))}
         </View>
     );
