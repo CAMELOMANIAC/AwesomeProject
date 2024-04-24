@@ -1,9 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
     Alert,
-    Button,
     FlatList,
     Text,
+    TouchableNativeFeedback,
     TouchableWithoutFeedback,
     View,
 } from 'react-native';
@@ -206,10 +206,12 @@ const Test = ({route, navigation}: Props) => {
     };
 
     return (
-        <View style={styles.screen}>
-            <Text>비교하고 싶은 정책을 선택해주세요</Text>
+        <View style={{justifyContent: 'space-between', flex: 1}}>
+            <Text style={styles.textColor}>
+                비교하고 싶은 정책 분야을 선택해주세요
+            </Text>
             {isLoading ? (
-                <Text>로딩중</Text>
+                <Text style={styles.textColor}>로딩중</Text>
             ) : (
                 <FlatList
                     data={keywordObject}
@@ -218,33 +220,47 @@ const Test = ({route, navigation}: Props) => {
                         <TouchableWithoutFeedback
                             onPress={() => pressHandler(item)}>
                             <View style={styles.checkBox}>
+                                <Text style={styles.textColor}>
+                                    {item.keyword}
+                                    {item.ratio}
+                                </Text>
                                 <CheckBox
                                     value={checkedPrms?.includes(item.keyword)}
                                     onValueChange={() => pressHandler(item)}
                                 />
-                                <Text>
-                                    {item.keyword}
-                                    {item.ratio}
-                                </Text>
                             </View>
                         </TouchableWithoutFeedback>
                     )}
                 />
             )}
             {isLoading === false && (
-                <Button
-                    onPress={() =>
-                        checkedPrms && checkedPrms.length > 1
-                            ? navigation?.navigate('Politic', {
-                                  checkedPrms: checkedPrms,
-                                  partyArray: partyArray.current,
-                              })
-                            : Alert.alert(
-                                  '2개 이상의 관심 키워드를 선택해주세요',
-                              )
-                    }
-                    title="다음으로"
-                />
+                <>
+                    <TouchableNativeFeedback
+                        onPress={() =>
+                            checkedPrms && checkedPrms.length > 1
+                                ? navigation?.navigate('Politic', {
+                                      checkedPrms: checkedPrms,
+                                      partyArray: partyArray.current,
+                                  })
+                                : Alert.alert(
+                                      '2개 이상의 관심 키워드를 선택해주세요',
+                                  )
+                        }>
+                        <View
+                            style={{
+                                padding: 10,
+                                backgroundColor: `${
+                                    checkedPrms && checkedPrms.length > 1
+                                        ? 'skyblue'
+                                        : 'grey'
+                                }`,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                            }}>
+                            <Text style={{fontSize: 18}}>다음으로</Text>
+                        </View>
+                    </TouchableNativeFeedback>
+                </>
             )}
         </View>
     );
