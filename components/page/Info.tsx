@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {useRecoilState} from 'recoil';
 import {likeArrayState} from '../../utils/recoil/globalState';
 import {Button, FlatList, Text, View} from 'react-native';
@@ -6,6 +6,7 @@ import {styles} from '../../utils/styleSheets';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../App';
+import {BackHandler} from 'react-native';
 
 const Info = () => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -25,21 +26,32 @@ const Info = () => {
     });
     partyNameArray.sort((a, b) => b.count - a.count);
 
+    useEffect(() => {
+        const backAction = () => true;
+
+        const backHandler = BackHandler.addEventListener(
+            'hardwareBackPress',
+            backAction,
+        );
+
+        return () => backHandler.remove();
+    }, []);
+
     return (
         <View style={styles.screen}>
             <FlatList
                 data={partyNameArray}
                 renderItem={({item, index}) => (
-                    <View>
-                        <Text>
+                    <View style={{margin: 10}}>
+                        <Text style={styles.textColor}>
                             {index + 1}위 {item.partyName}
                             {item.count}개
                         </Text>
                     </View>
                 )}></FlatList>
             <Button
-                title="처음으로"
-                onPress={() => navigation.navigate('Home')}
+                title="다시하기"
+                onPress={() => navigation.navigate('Test')}
             />
         </View>
     );
