@@ -50,12 +50,18 @@ function App(): React.JSX.Element {
                         <Stack.Screen
                             name="Politic"
                             component={Politic}
-                            options={{headerShown: false}}
+                            options={{
+                                headerShown: false,
+                            }}
                         />
                         <Stack.Screen
                             name="Info"
                             component={Info}
-                            options={{headerShown: false}}
+                            options={{
+                                headerShown: false,
+                                gestureEnabled: false, // 스와이프를 통한 이전 화면 이동을 비활성화
+                                headerLeft: () => null, // 헤더 왼쪽 버튼을 비활성화
+                            }}
                         />
                     </Stack.Navigator>
                 </NavigationContainer>
